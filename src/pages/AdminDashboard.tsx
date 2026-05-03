@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import api from '../lib/api';
 import { 
   Plus, Trash2, Edit2, LayoutDashboard, Utensils, 
   BarChart3, Package, Layers, Search, X, Check, Save 
@@ -32,14 +31,11 @@ export default function AdminDashboard() {
 
   const fetchItems = async () => {
     setLoading(true);
-    const path = 'foodItems';
     try {
-      const q = query(collection(db, path), orderBy('name', 'asc'));
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setItems(data);
+      const response = await api.get('/food-items');
+      setItems(response.data);
     } catch (err) {
-      handleFirestoreError(err, OperationType.LIST, path);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -47,38 +43,34 @@ export default function AdminDashboard() {
 
   const handleCreateOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const path = 'foodItems';
     const payload = {
       ...formData,
       price: parseFloat(formData.price as string),
-      updatedAt: new Date().toISOString()
     };
 
     try {
       if (editingItem) {
-        await updateDoc(doc(db, path, editingItem.id), payload);
+        await api.put(`/food-items/${editingItem.id}`, payload);
+        alert('Item updated successfully!');
       } else {
-        await addDoc(collection(db, path), {
-          ...payload,
-          createdAt: new Date().toISOString()
-        });
+        await api.post('/food-items', payload);
+        alert('Item launched successfully!');
       }
       setIsModalOpen(false);
       resetForm();
       fetchItems();
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, path);
+    } catch (err: any) {
+      alert('Error: ' + (err.response?.data?.error || err.message));
     }
   };
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this delicious item? This action is permanent.')) {
-      const path = 'foodItems';
       try {
-        await deleteDoc(doc(db, path, id));
+        await api.delete(`/food-items/${id}`);
         fetchItems();
       } catch (err) {
-        handleFirestoreError(err, OperationType.DELETE, path);
+        console.error(err);
       }
     }
   };

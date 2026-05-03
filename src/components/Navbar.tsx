@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../lib/firebase';
-import { signOut } from 'firebase/auth';
+import api from '../lib/api';
 import { Utensils, LogOut, LayoutDashboard, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -11,8 +10,13 @@ export default function Navbar({ user }: { user: any }) {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await signOut(auth);
-    navigate('/');
+    try {
+      await api.post('/auth/logout');
+      localStorage.removeItem('token');
+      window.location.href = '/'; // Force reload to update App state
+    } catch (err) {
+      console.error(err);
+    }
     setIsOpen(false);
   };
 

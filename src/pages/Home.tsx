@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, limit, getDocs } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import api from '../lib/api';
 import FoodCard from '../components/FoodCard';
 import { ArrowRight, Star, ShieldCheck, Zap, Heart } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -12,14 +11,11 @@ export default function Home() {
 
   useEffect(() => {
     const fetchItems = async () => {
-      const path = 'foodItems';
       try {
-        const q = query(collection(db, path), limit(6));
-        const querySnapshot = await getDocs(q);
-        const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setPopularItems(items);
+        const response = await api.get('/food-items/popular');
+        setPopularItems(response.data);
       } catch (err) {
-        handleFirestoreError(err, OperationType.LIST, path);
+        console.error(err);
       } finally {
         setLoading(false);
       }

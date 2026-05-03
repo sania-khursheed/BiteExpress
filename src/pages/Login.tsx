@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import api from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, LogIn, Lock, Mail, Eye, EyeOff, Utensils } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -18,10 +17,11 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate('/dashboard');
+      const response = await api.post('/auth/login', { email, password });
+      localStorage.setItem('token', response.data.token);
+      window.location.href = '/dashboard'; // Force reload to update App state
     } catch (err: any) {
-      setError('Invalid admin credentials. Please try again.');
+      setError(err.response?.data?.error || 'Invalid admin credentials. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ export default function Login() {
               </button>
             </div>
           </div>
-
+          
           <button
             type="submit"
             disabled={loading}
